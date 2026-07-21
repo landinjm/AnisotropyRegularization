@@ -1,98 +1,68 @@
-#include <array>
-#include <cmath>
-
-template <uint dim, typename Real>
-class Grad;
-
-template <uint dim, typename Real>
-Real
-anisotropy(Grad<dim, Real> &grad);
-
-template <uint dim, typename Real>
-Real
-grad_to_theta(Grad<dim, Real> &grad);
-
-template <typename Real>
-Real
-grad_to_psi(Grad<3, Real> &grad);
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 
 /**
- * @brief User defined anisotropy function.
- *
- * NOTE: This function must be defined for a specific dimension and real type (e.g., float
- * or double).
+ * Heaviside step function
  */
-template <>
-double
-anisotropy<2, double>(Grad<2, double> &grad)
+template <typename RealType>
+inline constexpr RealType
+theta(RealType x)
 {
-  auto theta = grad_to_theta(grad);
-
-  return 1.0 + 0.1 * std::cos(4.0 * theta);
+  return x >= RealType {0} ? RealType {1} : RealType {0};
 }
 
-template <uint dim, typename Real>
-class Grad
+template <typename RealType>
+struct Parameters
 {
-public:
-  static_assert(dim == 2 || dim == 3, "Only 2D and 3D are supported");
-  Grad() = default;
+  /**
+   * Baseline surface energy
+   */
+  RealType gamma_0;
 
-  template <typename... Args>
-  explicit Grad(Args... args)
-    : data {static_cast<Real>(args)...}
+  /**
+   * Total number of energy minima
+   */
+  unsigned int N;
+
+  /**
+   * Energy depth of the minima
+   */
+  std::vector<RealType> alpha;
+
+  /**
+   * Energy width of the minima
+   */
+  std::vector<RealType> omega;
+
+  /**
+   * Resize the depth and width of minima to the total number of minima
+   */
+  void
+  resize()
   {
-    static_assert(sizeof...(Args) == dim, "Wrong number of arguments");
+    alpha.resize(N);
+    omega.resize(N);
   }
 
-  Real &
-  operator[](std::size_t i)
-  {
-    return data[i];
-  }
-
-  const Real &
-  operator[](std::size_t i) const
-  {
-    return data[i];
-  }
-
-private:
-  std::array<Real, dim> data;
+  /**
+   * Validate the parameters
+   */
+  void
+  validate() const
+  {}
 };
 
-template <uint dim, typename Real>
-Real
-grad_to_theta(Grad<dim, Real> &grad)
-{
-  static_assert(dim == 2 || dim == 3, "Only 2D and 3D are supported");
-  return std::atan2(grad[1], grad[0]);
-}
-
-template <typename Real>
-Real
-grad_to_psi(Grad<3, Real> &grad)
-{
-  return std::atan2(std::sqrt(grad[0] * grad[0] + grad[1] * grad[1]), grad[2]);
-}
-
-template <uint dim, typename Real>
-find_missing_angles()
-{
-  static_assert(dim == 2 || dim == 3, "Only 2D and 3D are supported");
-
-  if constexpr (dim == 2)
-    {
-    }
-  else if constexpr (dim == 3)
-    {
-    }
-}
-
 int
-main()
+main(int argc, char *argv[])
 {
-  find_missing_angles<2, double>();
+  std::string   filename = (argc > 1) ? argv[1] : "parameter.prm";
+  std::ifstream prm(filename);
+  if (!prm)
+    {
+      std::cerr << "Could not open " << filename << '\n';
+      return 1;
+    }
 
   return 0;
 }
