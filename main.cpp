@@ -1,10 +1,8 @@
 #include <cmath>
-#include <concepts>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <libassert/assert.hpp>
-#include <numbers>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -36,7 +34,7 @@ struct Normal<2, RealType>
     y = y_ / d;
   }
 
-  constexpr RealType
+  [[nodiscard]] constexpr RealType
   dot(const Normal &other) const
   {
     return x * other.x + y * other.y;
@@ -72,7 +70,7 @@ struct Normal<3, RealType>
     z = z_ / d;
   }
 
-  constexpr RealType
+  [[nodiscard]] constexpr RealType
   dot(const Normal &other) const
   {
     return x * other.x + y * other.y + z * other.z;
@@ -82,15 +80,17 @@ struct Normal<3, RealType>
 template <int dim, typename RealType>
 struct Parameters
 {
+  static_assert(dim == 2 || dim == 3, "Anisotropies are only supported for 2D and 3D");
+
   /**
    * Baseline surface energy
    */
-  RealType gamma_0;
+  RealType gamma_0 {};
 
   /**
    * Total number of energy minima
    */
-  unsigned int N;
+  unsigned int N {};
 
   /**
    * Unit vectors that give the energy minma
@@ -119,6 +119,94 @@ struct Parameters
   }
 
   /**
+   * Read parameters from input stream
+   */
+  void
+  read(std::ifstream &input_stream)
+  {
+    std::string keyword;
+
+    input_stream >> keyword;
+    DEBUG_ASSERT(keyword == "gamma0", "Expected keyword gamma0", keyword);
+    input_stream >> gamma_0;
+
+    input_stream >> keyword;
+    DEBUG_ASSERT(keyword == "N", "Expected keyword N", keyword);
+    input_stream >> N;
+
+    resize();
+
+    input_stream >> keyword;
+    DEBUG_ASSERT(keyword == "m", "Expected keyword m", keyword);
+    for (int i = 0; i < N; ++i)
+      {
+        RealType x {};
+        RealType y {};
+        RealType z {};
+        input_stream >> x >> y >> z;
+        if constexpr (dim == 2)
+          {
+            m[i] = Normal<2, RealType>(x, y);
+          }
+        else if constexpr (dim == 3)
+          {
+            m[i] = Normal<3, RealType>(x, y, z);
+          }
+        else
+          {
+            UNREACHABLE("Anisotropies are only supported for 2D and 3D.");
+          }
+      }
+
+    // For this next bit we get the depths and widths. These can come in two flavors: a
+    // single constant value and N values.
+    input_stream >> keyword;
+    DEBUG_ASSERT(keyword == "alpha", "Expected keyword alpha", keyword);
+
+    std::string line;
+    std::getline(input_stream >> std::ws, line);
+    std::istringstream    iss(line);
+    std::vector<RealType> values;
+    RealType              value {};
+    while (iss >> value)
+      {
+        values.push_back(value);
+      }
+    if (values.size() == 1)
+      {
+        std::fill(alpha.begin(), alpha.end(), values[0]);
+      }
+    else
+      {
+        DEBUG_ASSERT(values.size() == N, "Expected 1 or N alpha values", values.size());
+        alpha = values;
+      }
+
+    input_stream >> keyword;
+    DEBUG_ASSERT(keyword == "omega", "Expected keyword omega", keyword);
+
+    std::getline(input_stream >> std::ws, line);
+
+    std::istringstream omega_iss(line);
+    values.clear();
+
+    while (omega_iss >> value)
+      {
+        values.push_back(value);
+      }
+
+    if (values.size() == 1)
+      {
+        std::fill(omega.begin(), omega.end(), values[0]);
+      }
+    else
+      {
+        DEBUG_ASSERT(values.size() == N, "Expected 1 or N omega values", values.size());
+        omega = values;
+      }
+  }
+
+  /**
    * Validate the parameters
    */
   void
@@ -140,7 +228,7 @@ struct Parameters
  * Heaviside step function
  */
 template <typename RealType>
-inline constexpr RealType
+constexpr RealType
 theta(RealType x)
 {
   return x >= RealType {0} ? RealType {1} : RealType {0};
@@ -175,44 +263,7 @@ main(int argc, char *argv[])
 
   // Read the parameter inputs
   Parameters<dim, RealType> param;
-
-  std::string keyword;
-
-  prm >> keyword;
-  DEBUG_ASSERT(keyword == "gamma0", "Expected keyword gamma0", keyword);
-  prm >> param.gamma_0;
-
-  prm >> keyword;
-  DEBUG_ASSERT(keyword == "N", "Expected keyword N", keyword);
-  prm >> param.N;
-
-  param.resize();
-
-  prm >> keyword;
-  DEBUG_ASSERT(keyword == "m", "Expected keyword m", keyword);
-  for (int i = 0; i < param.N; ++i)
-    {
-      RealType x {};
-      RealType y {};
-      RealType z {};
-      prm >> x >> y >> z;
-      param.m[i] = Normal<dim, RealType>(x, y, z);
-    }
-
-  prm >> keyword;
-  DEBUG_ASSERT(keyword == "alpha", "Expected keyword alpha", keyword);
-  for (int i = 0; i < param.N; ++i)
-    {
-      prm >> param.alpha[i];
-    }
-
-  prm >> keyword;
-  DEBUG_ASSERT(keyword == "omega", "Expected keyword omega", keyword);
-  for (int i = 0; i < param.N; ++i)
-    {
-      prm >> param.omega[i];
-    }
-
+  param.read(prm);
   param.validate();
 
   const int Ntheta = 181;
