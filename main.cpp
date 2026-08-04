@@ -1,3 +1,4 @@
+#include <adolc/adolc.h>
 #include <cmath>
 #include <fstream>
 #include <iostream>

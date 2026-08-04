@@ -27,8 +27,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(libassert)
 
+# Find ADOL-C
+find_path(ADOLC_INCLUDE_DIR adolc/adolc.h)
+find_library(ADOLC_LIBRARY adolc)
+
 # Executable and link libraries
 add_executable(anisotropy)
-target_link_libraries(anisotropy libassert::assert)
+target_include_directories(anisotropy PRIVATE ${ADOLC_INCLUDE_DIR})
+target_link_libraries(anisotropy libassert::assert ${ADOLC_LIBRARY})
 target_compile_features(anisotropy PRIVATE cxx_std_20)
 target_sources(anisotropy PRIVATE main.cpp)
