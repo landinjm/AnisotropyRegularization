@@ -31,8 +31,9 @@ struct Normal<2, RealType>
     y = y_ / d;
   }
 
+  template <typename number>
   [[nodiscard]] constexpr RealType
-  dot(const Normal &other) const
+  dot(const Normal<2, number> &other) const
   {
     return x * other.x + y * other.y;
   }
@@ -67,8 +68,9 @@ struct Normal<3, RealType>
     z = z_ / d;
   }
 
+  template <typename number>
   [[nodiscard]] constexpr RealType
-  dot(const Normal &other) const
+  dot(const Normal<3, number> &other) const
   {
     return x * other.x + y * other.y + z * other.z;
   }

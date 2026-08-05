@@ -7,17 +7,17 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   cert-*,
   cppcoreguidelines-*,
-  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   hicpp-*,
   misc-*,
   modernize-*,
   -modernize-use-trailing-return-type,
   mpi-*,
   performance-*,
+  -performance-enum-size,
+  -performance-avoid-endl,
   readability-*,
   -readability-convert-member-functions-to-static,
   -readability-math-missing-parentheses,
-  -readability-identifier-length,
 
 CheckOptions:
 # Ignore the macro expansions for complexity checks (e.g., deal.II's Assert)
