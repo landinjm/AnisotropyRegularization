@@ -30,7 +30,10 @@ public:
   [[nodiscard]] constexpr number
   theta(number x) const
   {
-    return x >= number(0) ? number(1) : number(0);
+    using std::tanh;
+
+    constexpr double eps = 1.0e-6;
+    return number(0.5) * (number(1) + tanh(x / number(eps)));
   }
 
   /**
@@ -240,7 +243,7 @@ private:
 int
 main(int argc, char *argv[])
 {
-  constexpr int dim = 3;
+  constexpr int dim = 2;
   using RealType    = double;
 
   // Try to open the parameter file
@@ -258,7 +261,7 @@ main(int argc, char *argv[])
   write_gamma_surface_vtk<dim, RealType>("surface.vtk", gamma);
 
   // Check curvature
-  if (gamma.requires_regularization())
+  if (gamma.requires_regularization(360, 180))
     {
       std::cout
         << "Warning: These values for the interfacial energy require regularization!"
