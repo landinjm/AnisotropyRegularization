@@ -18,13 +18,19 @@ struct Normal<2, RealType>
   {}
 
   explicit Normal(RealType theta)
-    : x(std::cos(theta))
-    , y(std::sin(theta))
-  {}
+  {
+    using std::cos;
+    using std::sin;
+
+    x = cos(theta);
+    y = sin(theta);
+  }
 
   Normal(RealType x_, RealType y_)
   {
-    RealType d = std::sqrt(x_ * x_ + y_ * y_);
+    using std::sqrt;
+
+    RealType d = sqrt(x_ * x_ + y_ * y_);
     DEBUG_ASSERT(d > RealType {0}, "Vector input length must be nonzero");
 
     x = x_ / d;
@@ -53,14 +59,20 @@ struct Normal<3, RealType>
   {}
 
   Normal(RealType theta, RealType psi)
-    : x(std::cos(psi) * std::cos(theta))
-    , y(std::cos(psi) * std::sin(theta))
-    , z(std::sin(psi))
-  {}
+  {
+    using std::cos;
+    using std::sin;
+
+    x = cos(psi) * cos(theta);
+    y = cos(psi) * sin(theta);
+    z = sin(psi);
+  }
 
   Normal(RealType x_, RealType y_, RealType z_)
   {
-    RealType d = std::sqrt(x_ * x_ + y_ * y_ + z_ * z_);
+    using std::sqrt;
+
+    RealType d = sqrt(x_ * x_ + y_ * y_ + z_ * z_);
     DEBUG_ASSERT(d > RealType {0}, "Vector input length must be nonzero");
 
     x = x_ / d;
