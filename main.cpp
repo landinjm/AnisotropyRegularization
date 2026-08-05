@@ -64,7 +64,8 @@ public:
       }
     else
       {
-        UNREACHABLE("Anisotropies are only supported for 2D and 3D.");
+        static_assert(dim == 2 || dim == 3,
+                      "Anisotropies are only supported for 2D and 3D");
       }
   }
 
@@ -181,6 +182,57 @@ public:
     // NOLINTEND
   }
 
+  bool
+  requires_regularization(int n_theta = 181, int n_psi = 91) const
+  {
+    RealType              min_curvature = std::numeric_limits<RealType>::max();
+    Normal<dim, RealType> min_n;
+
+    if constexpr (dim == 2)
+      {
+        for (int i = 0; i < n_theta; ++i)
+          {
+            RealType              theta = 2.0 * std::numbers::pi * i / n_theta;
+            Normal<dim, RealType> n(theta);
+            const auto            K = curvature_2d(n);
+            if (K < min_curvature)
+              {
+                min_curvature = K;
+                min_n         = n;
+              }
+          }
+        std::cout << "Minimum curvature = " << min_curvature << '\n'
+                  << "at (" << min_n.x << ", " << min_n.y << ")\n";
+      }
+    else if constexpr (dim == 3)
+      {
+        for (int j = 0; j < n_psi; ++j)
+          {
+            RealType psi = -std::numbers::pi / 2.0 + std::numbers::pi * j / n_psi;
+            for (int i = 0; i < n_theta; ++i)
+              {
+                RealType              theta = 2.0 * std::numbers::pi * i / n_theta;
+                Normal<dim, RealType> n(theta, psi);
+                const auto            K = curvature_3d(n);
+                if (K < min_curvature)
+                  {
+                    min_curvature = K;
+                    min_n         = n;
+                  }
+              }
+          }
+        std::cout << "Minimum curvature = " << min_curvature << '\n'
+                  << "at (" << min_n.x << ", " << min_n.y << ", " << min_n.z << ")\n";
+      }
+    else
+      {
+        static_assert(dim == 2 || dim == 3,
+                      "Anisotropies are only supported for 2D and 3D");
+      }
+
+    return min_curvature < 0.0;
+  }
+
 private:
   Parameters<dim, RealType> param;
 };
@@ -205,28 +257,13 @@ main(int argc, char *argv[])
   SurfaceEnergy<dim, RealType> gamma(param);
   write_gamma_surface_vtk<dim, RealType>("surface.vtk", gamma);
 
-  RealType              min_K = std::numeric_limits<RealType>::max();
-  Normal<dim, RealType> min_n;
-  constexpr int         n_theta = 360;
-  constexpr int         n_phi   = 180;
-  for (int i = 0; i < n_theta; ++i)
+  // Check curvature
+  if (gamma.requires_regularization())
     {
-      const RealType theta = 2.0 * std::numbers::pi * i / n_theta;
-
-      for (int j = 0; j <= n_phi; ++j)
-        {
-          const RealType        phi = std::numbers::pi * j / n_phi;
-          Normal<dim, RealType> n(theta, phi);
-          const auto            K = gamma.curvature(n);
-          if (K < min_K)
-            {
-              min_K = K;
-              min_n = n;
-            }
-        }
+      std::cout
+        << "Warning: These values for the interfacial energy require regularization!"
+        << std::endl;
     }
-  std::cout << "Minimum K = " << min_K << '\n'
-            << "at (" << min_n.x << ", " << min_n.y << ", " << min_n.z << ")\n";
 
   return 0;
 }

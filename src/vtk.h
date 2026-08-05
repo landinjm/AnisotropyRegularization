@@ -33,7 +33,7 @@ write_gamma_surface_vtk(const std::string &filename,
       gamma_values.reserve(n_theta);
       for (int i = 0; i < n_theta; ++i)
         {
-          RealType              theta = 2 * std::numbers::pi * i / (n_theta - 1);
+          RealType              theta = 2.0 * std::numbers::pi * i / n_theta;
           Normal<dim, RealType> n(theta);
           RealType              gamma = func(n);
           gamma_values.push_back(gamma);
@@ -49,10 +49,10 @@ write_gamma_surface_vtk(const std::string &filename,
       gamma_values.reserve(n_theta * n_psi);
       for (int j = 0; j < n_psi; ++j)
         {
-          RealType psi = -std::numbers::pi / 2 + std::numbers::pi * j / (n_psi - 1);
+          RealType psi = -std::numbers::pi / 2.0 + std::numbers::pi * j / n_psi;
           for (int i = 0; i < n_theta; ++i)
             {
-              RealType              theta = 2 * std::numbers::pi * i / (n_theta - 1);
+              RealType              theta = 2.0 * std::numbers::pi * i / n_theta;
               Normal<dim, RealType> n(theta, psi);
               RealType              gamma = func(n);
               gamma_values.push_back(gamma);

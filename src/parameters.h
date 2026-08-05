@@ -86,7 +86,8 @@ struct Parameters
           }
         else
           {
-            UNREACHABLE("Anisotropies are only supported for 2D and 3D.");
+            static_assert(dim == 2 || dim == 3,
+                          "Anisotropies are only supported for 2D and 3D");
           }
       }
 
